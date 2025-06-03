@@ -124,9 +124,28 @@ query_certificate() {
 
     # 保存JSON到文件
     local output_file="output/${certificate_id}.json"
-    if ! echo "$filtered_response" > "$output_file"; then
-        log_error "保存证书信息到文件失败: $output_file" >&2
-        return 0
+    if [ -f "$output_file" ]; then
+        # 文件存在，仅更新特定字段，不覆盖原有内容
+        local temp_file=$(mktemp)
+        jq --argjson new_data "$filtered_response" '
+            .CertificateId = $new_data.CertificateId 
+            | .Domain = $new_data.Domain 
+            | .Status = $new_data.Status 
+            | .CertBeginTime = $new_data.CertBeginTime 
+            | .CertEndTime = $new_data.CertEndTime 
+            | .InsertTime = $new_data.InsertTime 
+            | .StatusDesc = $new_data.StatusDesc 
+            | .RemainingDays = $new_data.RemainingDays' "$output_file" > "$temp_file" && mv "$temp_file" "$output_file"
+        if [ $? -ne 0 ]; then
+            log_error "更新证书信息失败: $output_file" >&2
+            return 1
+        fi
+    else
+        # 文件不存在，直接写入新内容
+        if ! echo "$filtered_response" > "$output_file"; then
+            log_error "保存证书信息到文件失败: $output_file" >&2
+            return 1
+        fi
     fi
     log_debug "已保存证书信息到: $output_file" >&2
 
@@ -144,6 +163,7 @@ query_certificate() {
     log_info "剩余有效期: ${remaining_days}天"
     log_info "----------------------------------------"
 
-    echo "$filtered_response"
+    # 返回过滤后的响应数据，只保留证书ID，剩余有效期
+    echo "$response" | jq --arg cert_id "$certificate_id" --arg status_code "$status_code" '{CertificateId: $cert_id, Status: $status_code}'
     return 0
 }

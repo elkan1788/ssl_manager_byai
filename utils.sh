@@ -1,5 +1,9 @@
 #!/bin/bash
 
+CONFIG_FILE="config.ini"
+OUTPUT_DIR="output/"
+SSL_DIR="/etc/nginx/ssl"
+
 # 检查终端是否支持颜色输出
 has_color_support() {
     # 检查是否是终端，且TERM不为dumb
@@ -56,7 +60,6 @@ check_dependencies() {
 read_ini() {
     local section=$1
     local key=$2
-    local file=$3
     local value=""
     local in_section=0
     
@@ -85,7 +88,7 @@ read_ini() {
             value=$(echo "$line" | sed -E 's/^[^=]+=[ ]*//')
             break
         fi
-    done < "$file"
+    done < "$CONFIG_FILE"
     
     if [ -n "$value" ]; then
         echo "$value"
@@ -99,15 +102,13 @@ read_ini() {
 # 获取配置文件中的证书ID
 get_configured_certificate_ids() {
   
-    local config_file=$1
     # 使用awk提取[certificates]部分的证书ID值（等号后面的部分）
-    awk -F '=' '/^\[certificates\]/{p=1;next} /^\[.*\]/{p=0} p&&/^[^#]/{print $2}' "$config_file" | \
+    awk -F '=' '/^\[certificates\]/{p=1;next} /^\[.*\]/{p=0} p&&/^[^#]/{print $2}' "$CONFIG_FILE" | \
         sed 's/[[:space:]]*//g' | \
         grep -v '^$'
 }
 # 获取状态映射
 get_status_mapping() {
-    local config_file=$1
     declare -A status_map
     local found_status=0
     
@@ -127,7 +128,7 @@ get_status_mapping() {
             found_status=1
             log_debug "添加状态映射: $code => $description" >&2
         fi
-    done < <(awk '/^\[status\]/{f=1;next} /^\[/{f=0} f' "$config_file")
+    done < <(awk '/^\[status\]/{f=1;next} /^\[/{f=0} f' "$CONFIG_FILE")
     
     # 如果没有找到任何有效的状态映射，返回错误
     if [ $found_status -eq 0 ]; then
@@ -164,9 +165,9 @@ calculate_remaining_days() {
 
 # 创建输出目录
 create_output_dir() {
-    if [ ! -d "output" ]; then
-        mkdir -p output
-        log_debug "创建输出目录: output/"
+    if [ ! -d "${OUTPUT_DIR}" ]; then
+        mkdir -p $OUTPUT_DIR
+        log_debug "创建输出目录: ${OUTPUT_DIR}/"
     fi
 }
 
@@ -321,4 +322,30 @@ validate_api_response() {
     fi
     
     return 0
+}
+
+# 读取 output 目录下的所有 JSON 文件
+read_certificate_records() {
+  local json_files=(${OUTPUT_DIR}/*.json)
+  local json_array="["
+  local first=1
+
+  for json_file in "${json_files[@]}"; do
+      if [ -f "$json_file" ]; then
+          local content=$(cat "$json_file")
+          if jq '.' > /dev/null 2>&1 <<< "$content"; then
+              if [ $first -eq 1 ]; then
+                  json_array+="$content"
+                  first=0
+              else
+                  json_array+=",$content"
+              fi
+          else
+              log_debug "文件不是有效的JSON: $json_file，跳过处理" >&2
+          fi
+      fi
+  done
+
+  json_array+="]"
+  echo "$json_array" | jq .
 }

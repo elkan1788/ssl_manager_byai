@@ -40,7 +40,7 @@ get_certificate_list() {
     if echo "$response" | jq -e '.Response.Certificates | length > 0' > /dev/null; then
         local cert_count=$(echo "$response" | jq '.Response.Certificates | length')
         log_info "通过 API 方式自动获取，找到 $cert_count 个证书" >&2
-        # 只返回证书ID列表，不包含任何日志信息
+        # 只返回证书ID列表
         echo "$response" | jq -r '.Response.Certificates[] | .CertificateId'
         return 0
     else

@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# 引入公共工具脚本
-source "./utils.sh"
-
 # 下载证书
 download_certificate() {
     local certificate_id=$1
@@ -54,22 +51,22 @@ download_certificate() {
     fi
 
     # 下载证书文件
-    if ! curl -s -o "output/$download_file" "$download_url"; then
+    if ! curl -s -o "${OUTPUT_DIR}/$download_file" "$download_url"; then
         log_error "下载证书失败: $certificate_id" >&2
         return 1
     fi
 
-    log_info "证书已成功下载至: output/$download_file" >&2
+    log_info "证书已成功下载至: ${OUTPUT_DIR}/$download_file" >&2
 
     # 更新原始JSON文件，添加cert_file字段
-    local json_file="output/${certificate_id}.json"
+    local json_file="${OUTPUT_DIR}/${certificate_id}.json"
     if [ -f "$json_file" ]; then
-        cat $json_file | jq --arg cert_file "$download_file" '. + {cert_file: $cert_file}' > "${json_file}.tmp" && mv "${json_file}.tmp" "$json_file"
+        cat $json_file | jq --arg cert_file "$download_file" '. + {CertificateFile: $cert_file}' > "${json_file}.tmp" && mv "${json_file}.tmp" "$json_file"
         if [ $? -ne 0 ]; then
             log_error "更新JSON文件失败: $json_file" >&2
             return 1
         fi
-        log_debug "JSON文件已更新，添加字段 cert_file: $download_file" >&2
+        log_debug "JSON文件已更新，添加字段 CertifcateFile: $download_file" >&2
     else
         log_debug "未找到对应的JSON文件: $json_file，跳过更新" >&2
     fi
