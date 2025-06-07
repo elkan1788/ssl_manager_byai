@@ -1,8 +1,6 @@
 #!/bin/bash
 
-CONFIG_FILE="config.ini"
-OUTPUT_DIR="output/"
-SSL_DIR="/etc/nginx/ssl"
+CONFIG_FILE="$SCRIPT_DIR/config.ini"
 
 # 检查终端是否支持颜色输出
 has_color_support() {

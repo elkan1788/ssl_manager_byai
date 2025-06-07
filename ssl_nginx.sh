@@ -6,7 +6,7 @@ LOG_TAG="ssl_nginx"
 deploy_nginx_ssl() {
 
 # 遍历 output 目录下的所有 JSON 文件
-for json_file in ${OUTPUT_DIR}*.json; do
+for json_file in ${OUTPUT_DIR}/*.json; do
     if [ ! -f "$json_file" ]; then
         log_debug "[$LOG_TAG] 未找到JSON文件，跳过处理" >&2
         continue
@@ -51,7 +51,7 @@ for json_file in ${OUTPUT_DIR}*.json; do
     fi
 
     # 构建目标路径
-    zip_file="${OUTPUT_DIR}$cert_file"
+    zip_file="${OUTPUT_DIR}/$cert_file"
 
     if [ ! -f "$zip_file" ]; then
         log_error "[$LOG_TAG] 证书ZIP文件不存在: $zip_file" >&2
@@ -67,7 +67,7 @@ for json_file in ${OUTPUT_DIR}*.json; do
 
     log_info "[$LOG_TAG] 域名 '$domain' 的证书已成功部署至: $SSL_DIR" >&2
 
-    json_file="${OUTPUT_DIR}$cert_id.json"
+    json_file="${OUTPUT_DIR}/$cert_id.json"
     if [ -f "$json_file" ]; then
       log_debug "[$LOG_TAG] 找到 JSON 文件: $json_file"
       # 使用 jq 修改 JSON 文件

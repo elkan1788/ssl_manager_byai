@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# 引入公共工具脚本
-source "./utils.sh"
-
 # 删除证书
 delete_certificate() {
     local secret_id=$1

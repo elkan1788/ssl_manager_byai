@@ -1,3 +1,9 @@
+[paths]
+# 输出目录位置
+output_dir=output3
+# SSL证书部署目录位置
+ssl_dir=/etc/nginx/ssl
+
 [common]
 # 腾讯云API密钥信息
 secret_id=YourSecretId

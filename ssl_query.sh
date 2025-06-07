@@ -123,7 +123,7 @@ query_certificate() {
     filtered_response=$(echo "$filtered_response" | jq --arg days "$remaining_days" '. + {RemainingDays: ($days|tonumber)}')
 
     # 保存JSON到文件
-    local output_file="output/${certificate_id}.json"
+    local output_file="${OUTPUT_DIR}/${certificate_id}.json"
     if [ -f "$output_file" ]; then
         # 文件存在，仅更新特定字段，不覆盖原有内容
         local temp_file=$(mktemp)
